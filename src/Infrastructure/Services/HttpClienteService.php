@@ -2,9 +2,10 @@
 
 namespace App\Infrastructure\Services;
 
+use App\Domain\Services\ClienteServiceInterface;
 use GuzzleHttp\Client;
 
-class ClienteService
+class HttpClienteService implements ClienteServiceInterface
 {
     private $client;
 

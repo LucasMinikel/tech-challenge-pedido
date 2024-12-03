@@ -5,16 +5,16 @@ namespace App\Application\UseCases;
 use App\Domain\Entities\Pedido;
 use App\Domain\Entities\ItemPedido;
 use App\Domain\Repositories\PedidoRepositoryInterface;
+use App\Domain\Services\CatalogoServiceInterface;
+use App\Domain\Services\ClienteServiceInterface;
 use App\Application\DTOs\PedidoDTO;
-use App\Infrastructure\Services\CatalogoService;
-use App\Infrastructure\Services\ClienteService;
 
 class CriarPedidoUseCase
 {
     public function __construct(
         private PedidoRepositoryInterface $pedidoRepository,
-        private CatalogoService $catalogoService,
-        private ClienteService $clienteService
+        private CatalogoServiceInterface $catalogoService,
+        private ClienteServiceInterface $clienteService
     ) {}
 
     public function execute(PedidoDTO $pedidoDTO): PedidoDTO
