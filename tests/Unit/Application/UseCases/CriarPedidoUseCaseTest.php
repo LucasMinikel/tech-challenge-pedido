@@ -12,9 +12,15 @@ use App\Domain\Services\ClienteServiceInterface;
 
 class CriarPedidoUseCaseTest extends TestCase
 {
+    /** @var PedidoRepositoryInterface&\PHPUnit\Framework\MockObject\MockObject */
     private $pedidoRepository;
+
+    /** @var CatalogoServiceInterface&\PHPUnit\Framework\MockObject\MockObject */
     private $catalogoService;
+
+    /** @var ClienteServiceInterface&\PHPUnit\Framework\MockObject\MockObject */
     private $clienteService;
+
     private $criarPedidoUseCase;
 
     protected function setUp(): void
