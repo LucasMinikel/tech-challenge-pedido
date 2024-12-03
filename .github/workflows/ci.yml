@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        coverage: xdebug
+        
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Run unit tests with coverage
+      run: vendor/bin/phpunit --configuration phpunit.xml --coverage-clover coverage.xml
+
+    - name: Run BDD tests
+      run: vendor/bin/behat
+
+    - name: List directory contents
+      run: ls -la
+
+    - name: Install bc
+      run: sudo apt-get install -y bc
+
+    - name: Check code coverage
+      run: |
+        echo "Checking for coverage.xml file..."
+        if [ ! -f coverage.xml ]; then
+          echo "coverage.xml file not found!"
+          ls -la
+          exit 1
+        fi
+        
+        echo "coverage.xml file found. Inspecting file for coverage rate..."
+        # Imprimir as primeiras 20 linhas para inspecionar o conteúdo
+        cat coverage.xml | head -n 20
+
+        # Procurar pelos atributos 'coveredelements' e 'elements' dentro das tags <metrics>
+        COVERAGE=$(grep -oP '<metrics[^>]+coveredelements="\K[0-9]+' coverage.xml | head -n 1)
+        TOTAL_ELEMENTS=$(grep -oP '<metrics[^>]+elements="\K[0-9]+' coverage.xml | head -n 1)
+
+        if [ -z "$COVERAGE" ] || [ -z "$TOTAL_ELEMENTS" ]; then
+          echo "Failed to extract coverage rate from coverage.xml"
+          echo "First few lines of coverage.xml:"
+          head -n 10 coverage.xml
+          exit 1
+        fi
+        
+        echo "Calculating coverage percentage..."
+        COVERAGE_PERCENTAGE=$(echo "scale=2; $COVERAGE * 100 / $TOTAL_ELEMENTS" | bc)
+        echo "Coverage percentage: $COVERAGE_PERCENTAGE%"
+        
+        if (( $(echo "$COVERAGE_PERCENTAGE < 80" | bc -l) )); then
+          echo "Code coverage is below 80%: $COVERAGE_PERCENTAGE%"
+          exit 1
+        else
+          echo "Code coverage is $COVERAGE_PERCENTAGE%"
+        fi
+
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarcloud-github-action@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      with:
+        args: >
+          -Dsonar.projectKey=LucasMinikel_tech-challenge-pedido
+          -Dsonar.organization=lucasminikel
+          -Dsonar.sources=src
+          -Dsonar.tests=tests,features
+          -Dsonar.php.tests.reportPath=test-report.xml
+          -Dsonar.php.coverage.reportPaths=coverage.xml
