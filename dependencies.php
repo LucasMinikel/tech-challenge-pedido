@@ -2,9 +2,16 @@
 
 use DI\ContainerBuilder;
 use App\Domain\Repositories\PedidoRepositoryInterface;
+use App\Domain\Services\CatalogoServiceInterface;
+use App\Domain\Services\ClienteServiceInterface;
 use App\Infrastructure\Persistence\PedidoRepository;
-use App\Infrastructure\Services\CatalogoService;
-use App\Infrastructure\Services\ClienteService;
+use App\Infrastructure\Services\HttpCatalogoService;
+use App\Infrastructure\Services\HttpClienteService;
+use App\Application\UseCases\CriarPedidoUseCase;
+use App\Application\UseCases\AtualizarStatusPedidoUseCase;
+use App\Application\UseCases\ListarPedidosUseCase;
+use App\Application\UseCases\ObterPedidoUseCase;
+use App\Infrastructure\API\Controllers\PedidoController;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
@@ -23,16 +30,20 @@ return function (ContainerBuilder $containerBuilder) {
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
         },
-        PedidoRepositoryInterface::class => function (PDO $pdo) {
-            return new PedidoRepository($pdo);
+
+        PedidoRepositoryInterface::class => \DI\autowire(PedidoRepository::class),
+        ClienteServiceInterface::class => function () {
+            return new HttpClienteService($_ENV['CLIENTE_SERVICE_URL']);
         },
-        CatalogoService::class => function () {
-            $catalogoServiceUrl = $_ENV['CATALOGO_SERVICE_URL'];
-            return new CatalogoService($catalogoServiceUrl);
+        CatalogoServiceInterface::class => function () {
+            return new HttpCatalogoService($_ENV['CATALOGO_SERVICE_URL']);
         },
-        ClienteService::class => function () {
-            $clienteServiceUrl = $_ENV['CLIENTE_SERVICE_URL'];
-            return new ClienteService($clienteServiceUrl);
-        },
+
+        CriarPedidoUseCase::class => \DI\autowire(),
+        AtualizarStatusPedidoUseCase::class => \DI\autowire(),
+        ListarPedidosUseCase::class => \DI\autowire(),
+        ObterPedidoUseCase::class => \DI\autowire(),
+
+        PedidoController::class => \DI\autowire()
     ]);
 };

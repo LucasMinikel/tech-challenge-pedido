@@ -2,9 +2,10 @@
 
 namespace App\Infrastructure\Services;
 
+use App\Domain\Services\CatalogoServiceInterface;
 use GuzzleHttp\Client;
 
-class CatalogoService
+class HttpCatalogoService implements CatalogoServiceInterface
 {
     private $client;
 
