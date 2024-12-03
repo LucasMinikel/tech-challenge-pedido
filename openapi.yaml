@@ -1,0 +1,139 @@
+openapi: 3.0.0
+info:
+  title: API de Pedidos
+  description: API para gerenciamento de pedidos do sistema de lanchonete
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/
+
+paths:
+  /pedidos:
+    get:
+      summary: Lista todos os pedidos
+      responses:
+        '200':
+          description: Lista de pedidos retornada com sucesso
+          content:
+            application/json:    
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pedido'
+    post:
+      summary: Cria um novo pedido
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoInput'
+      responses:
+        '201':
+          description: Pedido criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pedido'
+        '400':
+          description: Dados inválidos
+
+  /pedidos/{id}:
+    get:
+      summary: Obtém um pedido específico
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Pedido retornado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pedido'
+        '404':
+          description: Pedido não encontrado
+
+  /pedidos/{id}/status:
+    put:
+      summary: Atualiza o status de um pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        '200':
+          description: Status do pedido atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pedido'
+        '400':
+          description: Dados inválidos
+        '404':
+          description: Pedido não encontrado
+
+components:
+  schemas:
+    Pedido:
+      type: object
+      properties:
+        id:
+          type: string
+        clienteId:
+          type: string
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPedido'
+        valorTotal:
+          type: number
+          format: float
+        status:
+          type: string
+        dataCriacao:
+          type: string
+          format: date-time
+
+    PedidoInput:
+      type: object
+      properties:
+        clienteId:
+          type: string
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemPedidoInput'
+
+    ItemPedido:
+      type: object
+      properties:
+        produtoId:
+          type: string
+        quantidade:
+          type: integer
+        precoUnitario:
+          type: number
+          format: float
+
+    ItemPedidoInput:
+      type: object
+      properties:
+        produtoId:
+          type: string
+        quantidade:
+          type: integer
