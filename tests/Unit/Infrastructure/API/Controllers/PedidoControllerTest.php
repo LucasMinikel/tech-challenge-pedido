@@ -143,4 +143,115 @@ class PedidoControllerTest extends TestCase
 
         $this->assertInstanceOf(ResponseInterface::class, $result);
     }
+
+    public function testCriarPedidoComErro()
+    {
+        $pedidoData = [
+            'clienteId' => '123',
+            'itens' => [
+                ['produtoId' => '1', 'quantidade' => 2, 'precoUnitario' => 10.00]
+            ]
+        ];
+
+        $this->stream->expects($this->once())
+            ->method('getContents')
+            ->willReturn(json_encode($pedidoData));
+
+        $this->request->expects($this->once())
+            ->method('getBody')
+            ->willReturn($this->stream);
+
+        $this->criarPedidoUseCase->expects($this->once())
+            ->method('execute')
+            ->willThrowException(new \Exception('Erro ao criar pedido'));
+
+        $this->response->expects($this->once())
+            ->method('withHeader')
+            ->with('Content-Type', 'application/json')
+            ->willReturnSelf();
+
+        $this->response->expects($this->once())
+            ->method('withStatus')
+            ->with(400)
+            ->willReturnSelf();
+
+        $result = $this->controller->criar($this->request, $this->response);
+
+        $this->assertInstanceOf(ResponseInterface::class, $result);
+    }
+
+    public function testAtualizarStatusComSucesso()
+    {
+        $pedidoId = '123';
+        $statusData = ['status' => 'CONFIRMADO'];
+        $pedidoDTO = $this->createMock(PedidoDTO::class);
+
+        $this->request->expects($this->once())
+            ->method('getAttribute')
+            ->with('id')
+            ->willReturn($pedidoId);
+
+        $this->stream->expects($this->once())
+            ->method('getContents')
+            ->willReturn(json_encode($statusData));
+
+        $this->request->expects($this->once())
+            ->method('getBody')
+            ->willReturn($this->stream);
+
+        $pedidoDTO->expects($this->once())
+            ->method('toArray')
+            ->willReturn(['id' => $pedidoId, 'status' => 'CONFIRMADO']);
+
+        $this->atualizarStatusPedidoUseCase->expects($this->once())
+            ->method('execute')
+            ->with($pedidoId, 'CONFIRMADO')
+            ->willReturn($pedidoDTO);
+
+        $this->response->expects($this->once())
+            ->method('withHeader')
+            ->with('Content-Type', 'application/json')
+            ->willReturnSelf();
+
+        $result = $this->controller->atualizarStatus($this->request, $this->response);
+
+        $this->assertInstanceOf(ResponseInterface::class, $result);
+    }
+
+    public function testAtualizarStatusComErro()
+    {
+        $pedidoId = '123';
+        $statusData = ['status' => 'INVALIDO'];
+
+        $this->request->expects($this->once())
+            ->method('getAttribute')
+            ->with('id')
+            ->willReturn($pedidoId);
+
+        $this->stream->expects($this->once())
+            ->method('getContents')
+            ->willReturn(json_encode($statusData));
+
+        $this->request->expects($this->once())
+            ->method('getBody')
+            ->willReturn($this->stream);
+
+        $this->atualizarStatusPedidoUseCase->expects($this->once())
+            ->method('execute')
+            ->willThrowException(new \Exception('Status inválido'));
+
+        $this->response->expects($this->once())
+            ->method('withHeader')
+            ->with('Content-Type', 'application/json')
+            ->willReturnSelf();
+
+        $this->response->expects($this->once())
+            ->method('withStatus')
+            ->with(400)
+            ->willReturnSelf();
+
+        $result = $this->controller->atualizarStatus($this->request, $this->response);
+
+        $this->assertInstanceOf(ResponseInterface::class, $result);
+    }
 }

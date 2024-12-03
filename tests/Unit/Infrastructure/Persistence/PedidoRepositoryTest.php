@@ -138,4 +138,93 @@ class PedidoRepositoryTest extends TestCase
         $this->assertInstanceOf(Pedido::class, $result);
         $this->assertEquals($pedido->getId(), $result->getId());
     }
+
+    public function testUpdate()
+    {
+        $pedido = new Pedido(
+            '123',
+            '456',
+            [new ItemPedido('789', 2, 50.00)],
+            100.00,
+            'CONFIRMADO',
+            new \DateTime()
+        );
+
+        $this->pdo->expects($this->once())
+            ->method('prepare')
+            ->willReturn($this->pdoStatement);
+
+        $this->pdoStatement->expects($this->once())
+            ->method('execute')
+            ->willReturn(true);
+
+        $result = $this->repository->update($pedido);
+
+        $this->assertTrue($result);
+    }
+
+    public function testDelete()
+    {
+        $pedidoId = '123';
+
+        $this->pdo->expects($this->once())
+            ->method('beginTransaction');
+
+        $this->pdo->expects($this->exactly(2))
+            ->method('prepare')
+            ->willReturn($this->pdoStatement);
+
+        $this->pdoStatement->expects($this->exactly(2))
+            ->method('execute')
+            ->willReturn(true);
+
+        $this->pdo->expects($this->once())
+            ->method('commit');
+
+        $result = $this->repository->delete($pedidoId);
+
+        $this->assertTrue($result);
+    }
+
+    public function testFindByClienteId()
+    {
+        $clienteId = '456';
+        $pedidoData = [
+            'id' => '123',
+            'cliente_id' => $clienteId,
+            'valor_total' => 100.00,
+            'status' => 'CRIADO',
+            'data_criacao' => '2024-03-20 10:00:00'
+        ];
+
+        $stmtPedido = $this->createMock(PDOStatement::class);
+        $stmtPedido->expects($this->exactly(2))
+            ->method('fetch')
+            ->with(PDO::FETCH_ASSOC)
+            ->willReturnOnConsecutiveCalls($pedidoData, false);
+
+        $stmtItens = $this->createMock(PDOStatement::class);
+        $stmtItens->expects($this->exactly(2))
+            ->method('fetch')
+            ->with(PDO::FETCH_ASSOC)
+            ->willReturnOnConsecutiveCalls(
+                [
+                    'produto_id' => '789',
+                    'quantidade' => 2,
+                    'preco_unitario' => 50.00
+                ],
+                false
+            );
+
+        $this->pdo->expects($this->exactly(2))
+            ->method('prepare')
+            ->willReturnOnConsecutiveCalls($stmtPedido, $stmtItens);
+
+        $result = $this->repository->findByClienteId($clienteId);
+
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result);
+        $this->assertInstanceOf(Pedido::class, $result[0]);
+        $this->assertEquals($clienteId, $result[0]->getClienteId());
+    }
 }
